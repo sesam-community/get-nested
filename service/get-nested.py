@@ -31,8 +31,10 @@ class DataAccess:
 
         if "username" not in os.environ or "password" not in os.environ:
             logger.error("missing username/password")
+
         req = requests.get(url, auth=HttpNtlmAuth(os.environ.get("username"), os.environ.get("password")))
-        for entity in json.loads(req.text):
+        entities = json.loads(req.text)
+        for entity in entities:
             yield get_user_profile(entity, args)
 
 
@@ -77,14 +79,14 @@ def get_user_profile(entity,args):
     since = dict.get(since_path)
 
     url = os.environ.get("base_url") + os.environ.get("entity_url") + "?id=" + key_path
-
     req = requests.get(url, auth=HttpNtlmAuth(os.environ.get("username"), os.environ.get("password")))
 
-    for entity in json.loads(req.text):
+    entities = json.loads(req.text)
+    if not isinstance(entities, list):
+        entities = [entities]
+    for entity in entities:
         if since_path is not None:
             entity["_updated"] = since
-        else:
-            logger.log()
 
     return entity
 
@@ -123,7 +125,7 @@ def get_user():
     if request.args.get("key_path") is None:
         return Response (json.dumps([{'fault':'missing key_path'}]), mimetype='application/json', status=404)
     else:
-        entities = data_access_layer.get_entity(os.environ.get("entity_url"), args=request.args)
+        entities = data_access_layer.get_entity(os.environ.get("entitylist_url"), args=request.args)
         return Response(
             stream_json(entities),
             mimetype='application/json'
