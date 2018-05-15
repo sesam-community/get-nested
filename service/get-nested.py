@@ -77,8 +77,9 @@ def get_user_profile(entity,args):
     since_path = args.get("since_path")
     dict = Dotdictify(entity)
     since = dict.get(since_path)
+    key = dict.get(key_path)
 
-    url = os.environ.get("base_url") + os.environ.get("entity_url") + "?id=" + key_path
+    url = os.environ.get("base_url") + os.environ.get("entity_url") + "?id=" + key
     req = requests.get(url, auth=HttpNtlmAuth(os.environ.get("username"), os.environ.get("password")))
 
     entities = json.loads(req.text)
