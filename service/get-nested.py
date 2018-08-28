@@ -51,6 +51,7 @@ class DataAccess:
             yield
 
         req = requests.get(url, auth=HttpNtlmAuth(os.environ.get("username"),os.environ.get("password")))
+        req.encoding = 'utf-8'
         for entity in json.loads(req.text):
             yield set_list_updated(entity, args)
 
@@ -82,6 +83,7 @@ def get_user_profile(entity,args):
 
     url = os.environ.get("base_url") + os.environ.get("entity_url") + "?id=" + key
     req = requests.get(url, auth=HttpNtlmAuth(os.environ.get("username"), os.environ.get("password")))
+    req.encoding = 'utf-8'
 
     try:
         entities = json.loads(req.text)
