@@ -5,6 +5,7 @@ from requests_ntlm import HttpNtlmAuth
 import logging
 import json
 from dotdictify import Dotdictify
+import cherrypy
 
 app = Flask(__name__)
 logger = None
@@ -16,6 +17,8 @@ stdout_handler = logging.StreamHandler()
 stdout_handler.setFormatter(logging.Formatter(format_string))
 logger.addHandler(stdout_handler)
 logger.setLevel(logging.DEBUG)
+
+log_entities = os.environ.get("log_entities", 'False').lower() in ('true', '1')
 
 
 class DataAccess:
@@ -120,6 +123,7 @@ def stream_json(clean):
         yield json.dumps(row)
     yield ']'
 
+
 @app.route("/entitylist", methods=["GET"])
 def get_userlist():
     entities = data_access_layer.get_entity_list(os.environ.get("entitylist_url"), args=request.args)
@@ -132,9 +136,11 @@ def get_userlist():
 @app.route("/entity", methods=["GET"])
 def get_user():
     if request.args.get("key_path") is None:
-        return Response (json.dumps([{'fault':'missing key_path'}]), mimetype='application/json', status=404)
+        return Response (json.dumps([{'fault': 'missing key_path'}]), mimetype='application/json', status=404)
     else:
         entities = data_access_layer.get_entity(os.environ.get("entitylist_url"), args=request.args)
+        if log_entities and entities is not None:
+            logger.info(f"Entities fetched: {entities}")
         return Response(
             stream_json(entities),
             mimetype='application/json'
@@ -142,4 +148,17 @@ def get_user():
 
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', threaded=True, port=os.environ.get('port',5000))
+    cherrypy.tree.graft(app, '/')
+
+    # Set the configuration of the web server to production mode
+    cherrypy.config.update({
+        'environment': 'production',
+        'engine.autoreload_on': False,
+        'log.screen': True,
+        'server.socket_port': 5000,
+        'server.socket_host': '0.0.0.0'
+    })
+
+    # Start the CherryPy WSGI web server
+    cherrypy.engine.start()
+    cherrypy.engine.block()
