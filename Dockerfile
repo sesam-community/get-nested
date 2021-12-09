@@ -1,6 +1,6 @@
-FROM python:3-alpine
+FROM python:3.7
 
-MAINTAINER Ashkan Vahidishams "ashkan.vahidishams@sesam.io"
+MAINTAINER Tarjei Skrede "tarjei.skrede@sesam.io"
 
 COPY ./service /service
 WORKDIR /service
