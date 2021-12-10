@@ -37,12 +37,12 @@ class DataAccess:
 
         req = requests.get(url, auth=HttpNtlmAuth(os.environ.get("username"), os.environ.get("password")))
         entities = json.loads(req.text)
+        if log_entities and req.text is not None:
+            logger.info(f"Entities fetched: {req.text}")
         for entity in entities:
             yield get_user_profile(entity, args)
 
-
     def __get_entity_list(self, path, args):
-
         logger.info("Fetching data from url: %s", path)
         since = args.get("since")
         if since is not None:
@@ -55,6 +55,8 @@ class DataAccess:
 
         req = requests.get(url, auth=HttpNtlmAuth(os.environ.get("username"),os.environ.get("password")))
         req.encoding = 'utf-8'
+        if log_entities and req.text is not None:
+            logger.info(f"Entities fetched: {req.text}")
         for entity in json.loads(req.text):
             yield set_list_updated(entity, args)
 
@@ -126,6 +128,7 @@ def stream_json(clean):
 
 @app.route("/entitylist", methods=["GET"])
 def get_userlist():
+    logger.info(f"Got 'entitylist' request with arguments: {request.args}")
     entities = data_access_layer.get_entity_list(os.environ.get("entitylist_url"), args=request.args)
     return Response(
         stream_json(entities),
@@ -135,12 +138,12 @@ def get_userlist():
 
 @app.route("/entity", methods=["GET"])
 def get_user():
+    logger.info(f"Got 'entity' request with arguments: {request.args}")
     if request.args.get("key_path") is None:
         return Response (json.dumps([{'fault': 'missing key_path'}]), mimetype='application/json', status=404)
     else:
         entities = data_access_layer.get_entity(os.environ.get("entitylist_url"), args=request.args)
-        if log_entities and entities is not None:
-            logger.info(f"Entities fetched: {entities}")
+
         return Response(
             stream_json(entities),
             mimetype='application/json'
