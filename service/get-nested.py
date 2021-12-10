@@ -40,7 +40,9 @@ class DataAccess:
         if log_entities and req.text is not None:
             logger.info(f"Entities fetched: {req.text}")
         for entity in entities:
-            yield get_user_profile(entity, args)
+            user_profile = get_user_profile(entity, args)
+            if user_profile is not None:
+                yield user_profile
 
     def __get_entity_list(self, path, args):
         logger.info("Fetching data from url: %s", path)
